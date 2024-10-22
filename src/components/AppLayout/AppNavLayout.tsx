@@ -77,35 +77,6 @@ function AppNavLayout({
 `
   return (
     <Flex direction="column" id="app-layout" height="full" overflow={overflowHidden ? 'hidden' : 'auto'}>
-      {/* <Box
-        className="beta_tooltip"
-        ref={betaTooltipRef}
-        display={isOpen ? 'flex' : 'none'}
-        animation={`${fadeIn} 0.5s`}
-        flexDirection="row"
-        bg={colors.backgroundLight}
-      >
-        <Box display="flex" alignItems="center" justifyContent="center" textAlign="center" width="95%" mt="0.5em" mb="0.5em">
-          <Text as="span" textColor={colors.textPrimary} fontSize="0.85em" fontWeight="normal" color={colors.textPrimary}>
-            <Trans i18nKey="common.beta_tooltip">
-              <a href="https://v2.raydium.io" rel="noreferrer" target="_blank" style={{ color: colors.textLink }}>
-                here
-              </a>
-            </Trans>
-          </Text>
-        </Box>
-        <Box
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          cursor="pointer"
-          width="5%"
-          _hover={{ bg: colors.backgroundDark }}
-          onClick={() => closeBetaTooltip()}
-        >
-          ×
-        </Box>
-      </Box> */}
       <HStack
         className="navbar"
         flex="none"
@@ -172,6 +143,12 @@ function AppNavLayout({
             </RouteLink>
             <div className='css-qvoh0p'>
               <a href="https://bridge.eclipse.xyz/" target="_blank" rel="noreferrer">Bridge</a>
+            </div>
+            <div className='css-qvoh0p'>
+              <a href="https://x.com/turboswap_svm" target="_blank" rel="noreferrer">Twitter</a>
+            </div>
+            <div className='css-qvoh0p'>
+              <a href="https://t.me/TurboSwap_SVM" target="_blank" rel="noreferrer">Telegram</a>
             </div>
             {/* <Menu size="lg">
               <MenuButton fontSize={'lg'} px={4} py={2}>
