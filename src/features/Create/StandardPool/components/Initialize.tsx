@@ -178,69 +178,77 @@ export default function Initialize() {
 
   const unWrapSol = async () => {
     if (!anchorWallet) return;
-    const connection = new Connection(dexConfig.network, 'confirmed');
+    try {
+      const connection = new Connection(dexConfig.network, 'confirmed');
 
-    let ata = getAssociatedTokenAddressSync(
-      NATIVE_MINT, // mint
-      anchorWallet?.publicKey // owner
-    );
+      let ata = getAssociatedTokenAddressSync(
+        NATIVE_MINT, // mint
+        anchorWallet?.publicKey // owner
+      );
 
-    const unwrapTransaction = new Transaction().add(
-      createCloseAccountInstruction(
-        ata,
-        anchorWallet.publicKey,
-        anchorWallet.publicKey
-      )
-    );
-    const signature = await wallet.sendTransaction(unwrapTransaction, connection)
-    // await sendAndConfirmTransaction(connection, unwrapTransaction, [wallet]);
+      const unwrapTransaction = new Transaction().add(
+        createCloseAccountInstruction(
+          ata,
+          anchorWallet.publicKey,
+          anchorWallet.publicKey
+        )
+      );
+      const signature = await wallet.sendTransaction(unwrapTransaction, connection)
+      console.log(`Unwrap eth ${signature}`)
+
+    } catch (error) {
+      console.log(`Unwrap eth: ${error}`)
+    }
   }
 
   const makeWETH = async (tokenOrder: string) => {
     if (!anchorWallet) return
     const connection = new Connection(dexConfig.network, 'confirmed');
 
-    let ata = getAssociatedTokenAddressSync(
-      NATIVE_MINT, // mint
-      anchorWallet?.publicKey // owner
-    );
-
-    const ataInfo = await connection.getAccountInfo(ata);
-
-    if (!ataInfo) { //  don't exist token account
-      let tx = new Transaction().add(
-        createAssociatedTokenAccountInstruction(
-          anchorWallet.publicKey,
-          ata,
-          anchorWallet.publicKey,
-          NATIVE_MINT
-        ),
-        // trasnfer SOL
-        SystemProgram.transfer({
-          fromPubkey: anchorWallet.publicKey,
-          toPubkey: ata,
-          lamports: tokenOrder === "base" ? Math.floor(parseFloat(tokenAmount.base) * 1e9) : Math.floor(parseFloat(tokenAmount.quote) * 1e9),
-        }),
-        // sync wrapped SOL balance
-        createSyncNativeInstruction(ata, TOKEN_PROGRAM_ID)
+    try {
+      let ata = getAssociatedTokenAddressSync(
+        NATIVE_MINT, // mint
+        anchorWallet?.publicKey // owner
       );
-      const signature = await wallet.sendTransaction(tx, connection);
-    }
-    else { // when exist token account,
-      let tx = new Transaction().add(
-        // trasnfer SOL
-        SystemProgram.transfer({
-          fromPubkey: anchorWallet.publicKey,
-          toPubkey: ata,
-          lamports: tokenOrder === "base" ? Math.floor(parseFloat(tokenAmount.base) * 1e9) : Math.floor(parseFloat(tokenAmount.quote) * 1e9),
-        }),
-        // sync wrapped SOL balance
-        createSyncNativeInstruction(ata, TOKEN_PROGRAM_ID)
-      );
-      const signature = await wallet.sendTransaction(tx, connection);
-    }
 
-    // return tx;
+      const ataInfo = await connection.getAccountInfo(ata);
+
+      if (!ataInfo) { //  don't exist token account
+        let tx = new Transaction().add(
+          createAssociatedTokenAccountInstruction(
+            anchorWallet.publicKey,
+            ata,
+            anchorWallet.publicKey,
+            NATIVE_MINT
+          ),
+          // trasnfer SOL
+          SystemProgram.transfer({
+            fromPubkey: anchorWallet.publicKey,
+            toPubkey: ata,
+            lamports: tokenOrder === "base" ? Math.floor(parseFloat(tokenAmount.base) * 1e9) : Math.floor(parseFloat(tokenAmount.quote) * 1e9),
+          }),
+          // sync wrapped SOL balance
+          createSyncNativeInstruction(ata, TOKEN_PROGRAM_ID)
+        );
+        await wallet.sendTransaction(tx, connection);
+      }
+      else { // when exist token account,
+        let tx = new Transaction().add(
+          // trasnfer SOL
+          SystemProgram.transfer({
+            fromPubkey: anchorWallet.publicKey,
+            toPubkey: ata,
+            lamports: tokenOrder === "base" ? Math.floor(parseFloat(tokenAmount.base) * 1e9) : Math.floor(parseFloat(tokenAmount.quote) * 1e9),
+          }),
+          // sync wrapped SOL balance
+          createSyncNativeInstruction(ata, TOKEN_PROGRAM_ID)
+        );
+        await wallet.sendTransaction(tx, connection);
+      }
+
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   const onInitializeClick = async () => {
@@ -255,7 +263,7 @@ export default function Initialize() {
     const program = new Program(IDL, programId, provider);
 
     try {
-      let config_index = 9;
+      let config_index = 2;
       let tradeFeeRate = new BN(10)
       let protocolFeeRate = new BN(1000)
       let fundFeeRate = new BN(25000)
@@ -329,13 +337,13 @@ export default function Initialize() {
         token0,
         anchorWallet.publicKey,
         false,
-        TOKEN_PROGRAM_ID
+        new PublicKey(baseToken.programId)
       );
       const creatorToken1 = getAssociatedTokenAddressSync(
         token1,
         anchorWallet.publicKey,
         false,
-        TOKEN_PROGRAM_ID
+        new PublicKey(quoteToken.programId)
       );
       // const confirmOptions = {
       //   skipPreflight: true,
@@ -359,8 +367,8 @@ export default function Initialize() {
           // createPoolFee: new PublicKey("HtPorWESXkST2NLsq7CkjvGSeF4JkvXFvtE8S7MtKeXZ"),
           observationState: observationAddress,
           tokenProgram: TOKEN_PROGRAM_ID,
-          token0Program: TOKEN_PROGRAM_ID,
-          token1Program: TOKEN_PROGRAM_ID,
+          token0Program: new PublicKey(baseToken.programId),
+          token1Program: new PublicKey(quoteToken.programId),
           systemProgram: SystemProgram.programId,
           rent: SYSVAR_RENT_PUBKEY,
         })
@@ -379,7 +387,8 @@ export default function Initialize() {
       })
 
     } catch (error) {
-      console.error("Error minting NFT:", error);
+      console.error("Initialize error:", error);
+      unWrapSol();
       offLoading()
     }
 
